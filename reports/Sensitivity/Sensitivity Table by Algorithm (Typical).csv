@@ -1,0 +1,6 @@
+,Walk,Walk,WalkNod,WalkNod,WalkShake,WalkShake,TUGTurns,TUGTurns
+,Diao,TP-EAR,Diao,TP-EAR,Diao,TP-EAR,Diao,TP-EAR
+Event,,,,,,,,
+IC,99.9,99.9,99.9,99.9,99.9,99.8,99.4,99.4
+FO,100.0,99.9,99.7,100.0,97.1,99.8,91.4,98.7
+Laterality,100.0,99.8,99.7,99.4,82.8,83.0,94.6,93.7
