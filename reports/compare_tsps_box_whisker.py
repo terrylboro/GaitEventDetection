@@ -58,7 +58,7 @@ def boxplot_compare_activities(tspsDF1, tspsDF2, plotName1, plotName2, dataSourc
             plt.show()
 
 
-def boxplot_compare_algorithm_tsps(plotName1, plotName2, dataSource, tsParam, save=False):
+def boxplot_compare_algorithm_tsps(plotName1, plotName2, dataSource, tsParam, isAbsolute, save=False):
     """
     Compare parameter for two activities on a single plot.
     Typical vs non-typical participants are plotted for each event.
@@ -90,17 +90,11 @@ def boxplot_compare_algorithm_tsps(plotName1, plotName2, dataSource, tsParam, sa
             tspsDF1 = pd.read_csv("../data/Diao/TSPs/{} Diao TSPs Summary.csv".format(activityTitle))
             tspsDF2 = pd.read_csv("../data/TP-EAR/TSPs/{} TP-EAR TSPs Summary.csv".format(activityTitle))
 
-            print("{} - {}".format(activityTitle, state))
-            print(tspsDF1[~(tspsDF1['Filename'].isin(tspsDF2['Filename']))])#.drop_duplicates(keep=False))
-
             # Split into typical and non-typical
             subjectNums = np.array([int(x[3:5]) for x in tspsDF1["Filename"].values])
             stateMask = np.isin(subjectNums, nonTypicalIDs) if state == "Non-Typical" else ~np.isin(subjectNums, nonTypicalIDs)
-            # print(stateMask)
             tspsDF1 = tspsDF1.loc[stateMask, :]
-            # print(tspsDF1.shape)
             tspsDF2 = tspsDF2.loc[stateMask, :]
-            # print(tspsDF2.shape)
 
             # Fill df with chosen TSP data for each algorithm
             for tspsDF, algorithmName in zip([tspsDF1, tspsDF2], [plotName1, plotName2]):
@@ -111,7 +105,7 @@ def boxplot_compare_algorithm_tsps(plotName1, plotName2, dataSource, tsParam, sa
                 for cycle in tspsDF.index.values:
                     eventArr = np.full((1, 4), fill_value=np.nan, dtype="object")
                     for i, eventName in enumerate([tsParam]):
-                        eventArr[i] = [activityName, algorithmName, eventName, tspsDF.at[cycle, eventStr.format(eventName)] / 100]
+                        eventArr[i] = [activityName, algorithmName, eventName, tspsDF.at[cycle, eventStr.format(eventName)] * 10]
                     # Add to overall df
                     boxDF = pd.concat((boxDF, pd.DataFrame(data=eventArr, columns=["Activity", "Algorithm", "EventType", "Value"])))
 
@@ -120,7 +114,10 @@ def boxplot_compare_algorithm_tsps(plotName1, plotName2, dataSource, tsParam, sa
         boxDF.Activity = pd.Categorical(boxDF.Activity, categories=["Walk", "WalkV", "WalkH", "Turn"], ordered=True)
         boxDF.Algorithm = pd.Categorical(boxDF.Algorithm, categories=["Diao", "TP-EAR"])
         # boxDF.EventType = pd.Categorical(boxDF.EventType, categories=["Stance"], ordered=True)
-        boxDF.Value = boxDF.Value.astype(float)
+        if isAbsolute:
+            boxDF.Value = boxDF.Value.abs().astype(float)
+        else:
+            boxDF.Value = boxDF.Value.astype(float)
         boxDF = boxDF.reset_index()
 
         # Plot the figure
@@ -130,58 +127,27 @@ def boxplot_compare_algorithm_tsps(plotName1, plotName2, dataSource, tsParam, sa
         plt.xticks(size=18)
         plt.yticks(size=12)
         plt.xlabel("Parameter", size=22)
-        plt.ylabel("Time / s", size=22)
+        plt.ylabel("Time / ms", size=22)
         plt.tight_layout()
         # plt.axhline(y=0, color='gray', linestyle='--', alpha=0.3)
 
         if save:
-            # plt.savefig("BoxWhisker/{}.png".format("-".join(str(title + "{} Participants".format(state)).split(" "))))
-            plt.savefig("Comparison Plots/{}Comparison{}.png".format(tsParam, state), dpi=300)
+            if isAbsolute:
+                plt.savefig("Comparison Plots/{}AbsoluteComparison{}.png".format(tsParam, state), dpi=300)
+            else:
+                plt.savefig("Comparison Plots/{}Comparison{}.png".format(tsParam, state), dpi=300)
             plt.close()
         else:
             plt.show()
 
 
 if __name__ == '__main__':
-    # Plot the walking activities first
-    # for activityName, plotName in zip(["Walk", "WalkShake", "WalkNod"], ["Walk", "WalkH", "WalkV"]):
-    #     tspsDF = format_tsps_df(activityName, isNew=True)
-    #
-    #     boxplot_all_tsps_by_state(tspsDF, plotName, "IMU", save=True, isNew=True)
-    #     boxplot_all_tsps_by_state(tspsDF, plotName, "GT", save=True, isNew=True)
-    #     boxplot_all_tsps_by_state(tspsDF, plotName, "Diffs", save=True, isNew=True)
-    #
-    #     boxplot_separate_tsps_by_state(tspsDF, plotName, "IMU", save=True, isNew=True)
-    #     boxplot_separate_tsps_by_state(tspsDF, plotName, "GT", save=True, isNew=True)
-    #     boxplot_separate_tsps_by_state(tspsDF, plotName, "Diffs", save=True, isNew=True)
-    #
-    #
-    # # Process TUG trials
-    # for activityName, plotName in zip(["TUG Turns", "TUG Non Turns"], ["TUG Turns", "TUG Non Turns"]):
-    #     # tspsDF = format_tsps_df(activityName)
-    #     tspsDF = format_tsps_df(activityName, isNew=True)
-    #
-    #     boxplot_all_tsps_by_state(tspsDF, plotName, "IMU", save=True, isNew=True)
-    #     boxplot_all_tsps_by_state(tspsDF, plotName, "GT", save=True, isNew=True)
-    #     boxplot_all_tsps_by_state(tspsDF, plotName, "Diffs", save=True, isNew=True)
-    #
-    #     boxplot_separate_tsps_by_state(tspsDF, plotName, "IMU", save=True, isNew=True)
-    #     boxplot_separate_tsps_by_state(tspsDF, plotName, "GT", save=True, isNew=True)
-    #     boxplot_separate_tsps_by_state(tspsDF, plotName, "Diffs", save=True, isNew=True)
-
     # Compare turning vs non-turning
     for source in ["Diffs"]:
-        # boxplot_compare_activities(format_tsps_df("TUG Turns"), format_tsps_df("TUG Non Turns"),
-        #                            "TUG Turns", "TUG Non Turns",
-        #                            source, save=True)
-
-        # boxplot_compare_activities(format_tsps_df("WalkShake", isNew=True), format_tsps_df("WalkShake", isNew=False),
-        #                            "New", "Diao",
-        #                            source, activityName="WalkH", save=True)
-
-        for param in ["Stride", "Stance"]:
-            boxplot_compare_algorithm_tsps("Diao", "TP-EAR",
-                                       source, tsParam=param, save=True)
+        for isAbsolute in [True, False]:
+            for param in ["Stride", "Stance"]:
+                boxplot_compare_algorithm_tsps("Diao", "TP-EAR",
+                                           source, tsParam=param, isAbsolute=isAbsolute, save=True)
 
 
 

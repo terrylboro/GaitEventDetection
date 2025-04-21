@@ -45,22 +45,32 @@ def calculate_tsp_metrics_by_state(typicalDF, nonTypicalDF, dataSource):
     else:
         raise ("Unrecognized data source: {}".format(dataSource))
 
-    typicalArr = np.zeros((3, 2), dtype="object")
+    typicalArr = np.zeros(3, dtype="object")
     nonTypicalArr = np.zeros_like(typicalArr)
 
     for i, tspName in enumerate(["Stride", "Stance", "Swing"]):
-        for j, algorithm in enumerate(["Diao", "TP-EAR"]):
-            # Calculate mean, std and range
-            typicalMeanVal = typicalDF.loc[:, eventStr.format(tspName)].abs().mean() * 10
-            typicalStdVal = typicalDF.loc[:, eventStr.format(tspName)].abs().std() * 10
-            nonTypicalMeanVal = nonTypicalDF.loc[:, eventStr.format(tspName)].abs().mean() * 10
-            nonTypicalStdVal = nonTypicalDF.loc[:, eventStr.format(tspName)].abs().std() * 10
+        # Calculate mean, std and range
+        typicalMeanVal = typicalDF.loc[:, eventStr.format(tspName)].abs().mean() * 10
+        typicalStdVal = typicalDF.loc[:, eventStr.format(tspName)].abs().std() * 10
+        nonTypicalMeanVal = nonTypicalDF.loc[:, eventStr.format(tspName)].abs().mean() * 10
+        nonTypicalStdVal = nonTypicalDF.loc[:, eventStr.format(tspName)].abs().std() * 10
 
-            # print("--- {} Time {} Typical ---\nMean: {:2.1f}±{:2.1f}".format(tspName, algorithm, typicalMeanVal, typicalStdVal))
-            # print("--- {} Time {} Non Typical ---\nMean: {:2.1f}±{:2.1f}".format(tspName, algorithm, nonTypicalMeanVal,
-            #                                                                  nonTypicalStdVal))
-            typicalArr[i, j] = "{:2.1f}±{:2.1f}".format(typicalMeanVal, typicalStdVal)
-            nonTypicalArr[i, j] = "{:2.1f}±{:2.1f}".format(nonTypicalMeanVal, nonTypicalStdVal)
+        plt.plot(typicalDF.loc[:, eventStr.format(tspName)].abs() * 10)
+        plt.axhline(typicalMeanVal, color="r")
+        plt.title("abs distribution for Typical {} {}".format(tspName, dataSource))
+        plt.show()
+
+        sns.boxplot(x=1, y=typicalDF.loc[:, eventStr.format(tspName)].abs() * 10)
+        plt.show()
+
+        # check the csv
+        typicalDF.loc[:, eventStr.format(tspName)].abs().mul(10).to_csv("abs distribution for Typical {} {}.csv".format(tspName, dataSource))
+
+        # print("--- {} Time {} Typical ---\nMean: {:2.1f}±{:2.1f}".format(tspName, algorithm, typicalMeanVal, typicalStdVal))
+        # print("--- {} Time {} Non Typical ---\nMean: {:2.1f}±{:2.1f}".format(tspName, algorithm, nonTypicalMeanVal,
+        #                                                                  nonTypicalStdVal))
+        typicalArr[i] = "{:2.1f}±{:2.1f}".format(typicalMeanVal, typicalStdVal)
+        nonTypicalArr[i] = "{:2.1f}±{:2.1f}".format(nonTypicalMeanVal, nonTypicalStdVal)
     return typicalArr, nonTypicalArr
 
 
@@ -78,8 +88,7 @@ if __name__ == "__main__":
             print(activityName + "\n------------")
             typicalDF, nonTypicalDF = format_tsps_df(activityName, algorithm)
             print(typicalDF)
-            typicalTable[[(activityName, algorithm), (activityName, algorithm)]], nonTypicalTable[[(activityName, algorithm), (activityName, algorithm)]] = calculate_tsp_metrics_by_state(
-                typicalDF, nonTypicalDF, "Diffs")
+            typicalTable[(activityName, algorithm)], nonTypicalTable[(activityName, algorithm)] = calculate_tsp_metrics_by_state(typicalDF, nonTypicalDF, "Diffs")
 
     typicalTable.set_index(pd.Index(data=["Stride (ms)", "Stance (ms)", "Swing (ms)"]), inplace=True)
     nonTypicalTable.set_index(pd.Index(data=["Stride (ms)", "Stance (ms)", "Swing (ms)"]), inplace=True)
